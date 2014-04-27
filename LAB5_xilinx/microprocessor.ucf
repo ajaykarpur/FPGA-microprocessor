@@ -1,0 +1,27 @@
+# ===== CLOCK=====
+
+NET "clock" LOC = "T9";
+
+# switches
+
+NET "reset" LOC = "F12";
+
+# ===== PUSH BUTTONS =====
+
+NET "button" LOC = "M13";		// goes to BTN0
+
+# ===== 7 SEG DISPLAY =====
+
+NET "anode(3)" LOC = "E13";
+NET "anode(2)" LOC = "F14";
+NET "anode(1)" LOC = "G14";
+NET "anode(0)" LOC = "D14";
+
+NET "Y(7)" LOC = "E14";			// segment a
+NET "Y(6)" LOC = "G13";			// segment b
+NET "Y(5)" LOC = "N15";			// segment c
+NET "Y(4)" LOC = "P15";			// segment d
+NET "Y(3)" LOC = "R16";			// segment e
+NET "Y(2)" LOC = "F13";			// segment f
+NET "Y(1)" LOC = "N16";			// segment g
+NET "Y(0)" LOC = "P16";			// segment dp

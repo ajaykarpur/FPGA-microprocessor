@@ -218,4 +218,5 @@ pip-log.txt
 vsim.wlf
 modelsim.ini
 wlft*
+transcript
 work/

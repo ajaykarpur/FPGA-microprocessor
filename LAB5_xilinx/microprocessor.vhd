@@ -4,10 +4,12 @@ library IEEE;
 	use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 entity microprocessor is
-	-- port
-	-- (
-	-- 	clock, reset: in std_logic
-	-- );
+	port
+	(
+		clock, reset, button: in std_logic;
+		anode: out std_logic_vector(3 downto 0);
+		Y: out std_logic_vector(7 downto 0)
+	);
 end entity microprocessor;
 
 architecture arch of microprocessor is
@@ -30,7 +32,6 @@ architecture arch of microprocessor is
 
 	signal deb_count: integer range 0 to 4;
 	signal pulse: std_logic;
-	signal button: std_logic;
 
 	signal char1: std_logic_vector(3 downto 0);
 	signal char2: std_logic_vector(3 downto 0);
@@ -40,12 +41,7 @@ architecture arch of microprocessor is
 	signal seg2: std_logic_vector(7 downto 0);
 	signal seg3: std_logic_vector(7 downto 0);
 	signal seg4: std_logic_vector(7 downto 0);
-	signal Y: std_logic_vector(7 downto 0);
-	signal anode: std_logic_vector(3 downto 0);
 	signal displaycounter: integer range 0 to 3;
-
-	signal clock: std_logic := '0';
-	signal reset: std_logic;
 
 	signal PC_vector: std_logic_vector(15 downto 0);
 
@@ -141,28 +137,6 @@ architecture arch of microprocessor is
 			end if;
 		end process store;
 
-		-- generates clock signal
-		clock_process: process
-		begin
-			clock <= not clock;
-			wait for 10 ns;
-		end process;
-
-	PC_counter: process(pulse)
-	  	begin
-	  		if (reset = '1') then
-	  			PC <= 0;
-	  			cycle_count <= 0;
-	    	elsif (rising_edge(pulse)) then
-	      		if (cycle_count /= 4) then 
-	      			cycle_count <= cycle_count + 1;
-	      		else
-		    		PC <= PC + 1;
-		    		cycle_count <= 1;
-		    	end if;
-			end if;
-	  	end process PC_counter;
-
 --"debounce" process: Takes the input of the slower clock and ensures that only one 
 --clock is running at a time when the button is pushed. This debounced clock is then
 --sent to the FSM as the actual clock for sequential logic. Taken directly from the
@@ -182,7 +156,6 @@ architecture arch of microprocessor is
 	    		else pulse <= '0';
 			end if;
 	  	end process debounce;
--- --------------------------------------------------
 
 	char_process: process(PC_vector)
 	begin
@@ -191,59 +164,9 @@ architecture arch of microprocessor is
 		char3 <= PC_vector(7 downto 4);
 		char4 <= PC_vector(3 downto 0);
 	end process char_process; -- mux
--- --"char_process" Determines which characters are sent to the output according
--- --to the current state
--- 	char_process: process(P_S)
--- 	begin
--- 		case P_S is
-		
--- 			when P00 =>
--- 				char1 <= P;
--- 				char2 <= dash;
--- 				char3 <= 0;
--- 				char4 <= 0;
 
--- 			when A1G =>
--- 				char1 <= A;
--- 				char2 <= dash;
--- 				char3 <= 1;
--- 				char4 <= G;
-
--- 			when B2H =>
--- 				char1 <= B;
--- 				char2 <= dash;
--- 				char3 <= 2;
--- 				char4 <= H;
-
--- 			when C3I =>
--- 				char1 <= C;
--- 				char2 <= dash;
--- 				char3 <= 3;
--- 				char4 <= I;
-
--- 			when D4J =>
--- 				char1 <= D;
--- 				char2 <= dash;
--- 				char3 <= 4;
--- 				char4 <= J;
-
--- 			when E5K =>
--- 				char1 <= E;
--- 				char2 <= dash;
--- 				char3 <= 5;
--- 				char4 <= K;
-		
--- 			when others =>
--- 				char1 <= P;
--- 				char2 <= dash;
--- 				char3 <= 0;
--- 				char4 <= 0;
-		
--- 		end case;
--- 	end process char_process;
-
--- --Determines the actual 8-bit vector that gets sent to the cathode to be displayed on 
--- --the 7-segment display.
+	--Determines the actual 8-bit vector that gets sent to the cathode to be displayed on 
+	--the 7-segment display.
 	with char1 select
 		seg1 <= "00000011" when x"0",
 			    "10011111" when x"1",
@@ -319,8 +242,6 @@ architecture arch of microprocessor is
 			    "01100001" when x"E",
 			    "01110001" when x"F",
 			    "11111111" when others;
-
--- --------------------------------------------------
 
 --"displaying" process: establishes a counter that will cycle through each of the anodes
 --as to allow each character to be displayed one by one since they cannot all be sent
