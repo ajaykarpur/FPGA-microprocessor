@@ -33,6 +33,8 @@ architecture arch of microprocessor is
 	signal deb_count: integer range 0 to 4;
 	signal pulse: std_logic;
 
+	signal slow_clock: std_logic;
+	signal slow_count: integer range 0 to 20001 := 0;
 	signal char1: std_logic_vector(3 downto 0);
 	signal char2: std_logic_vector(3 downto 0);
 	signal char3: std_logic_vector(3 downto 0);
@@ -79,11 +81,11 @@ architecture arch of microprocessor is
 		decode: process(pulse, reset)
 		begin
 			if (reset = '1') then
-				opcode <= "UUUU";
-				RA <= "UUUU";
-				RB <= "UUUU";
-				RD <= "UUUU";
-				immediate <= "UUUUUUUU";
+				opcode <= "0000";
+				RA <= "0000";
+				RB <= "0000";
+				RD <= "0000";
+				immediate <= x"00";
 			elsif rising_edge(pulse) then
 				opcode <= IR(15 downto 12);
 				RA <= IR(11 downto 8);
@@ -122,7 +124,7 @@ architecture arch of microprocessor is
 						W <= immediate;
 				
 					when others =>
-						W <= "UUUUUUUU";
+						W <= x"00";
 				
 				end case;
 			end if;
@@ -136,6 +138,30 @@ architecture arch of microprocessor is
 				RF(conv_integer(RD)) <= W;
 			end if;
 		end process store;
+		
+		PC_counter: process(pulse)
+	  	begin
+	  		if (reset = '1') then
+	  			PC <= 0;
+	    	elsif (rising_edge(pulse)) then
+		    		PC <= PC + 1;
+			end if;
+	  	end process PC_counter;
+		
+--"slow clock" process: Takes the FPGA built in clock and slows it down to a speed of
+--2.5kHz to be used in the FSM and the debounce.	
+	slow_clock_process: process(clock)
+	begin
+		if (rising_edge(clock)) then
+			slow_count <= slow_count + 1;
+			if (slow_count = 20000) then
+				slow_count <= 0;
+				slow_clock <= '0';
+			elsif (slow_count = 19999) then
+				slow_clock <= '1';
+			end if;
+		end if;
+	end process slow_clock_process;
 
 --"debounce" process: Takes the input of the slower clock and ensures that only one 
 --clock is running at a time when the button is pushed. This debounced clock is then
@@ -148,7 +174,7 @@ architecture arch of microprocessor is
 	      		deb_count <= 0;
 	    	elsif (rising_edge(clock)) then
 	      		if (deb_count /= 3) then 
-	      			deb_count <= deb_count + 1; 
+	      			deb_count <= deb_count + 1;
 	      		end if;
 	    	end if;
 	    	if (deb_count = 2) and (button = '0') then 
@@ -248,7 +274,7 @@ architecture arch of microprocessor is
 --to their corresponding anode at the same time
 	displaying: process(seg1, seg2, seg3, seg4)
 	begin
-		if (rising_edge(pulse)) then
+		if (rising_edge(slow_clock)) then
 			if (displaycounter = 3) then
 			displaycounter <= 0;
 			else
