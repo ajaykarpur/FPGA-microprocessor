@@ -18,7 +18,7 @@ architecture arch of microprocessor is
 	type RF_array is array(0 to 15) of std_logic_vector(7 downto 0);
 
 	signal IM: IM_array;
-	signal PC: integer range 0 to 255 := 0;
+	signal PC: integer range 0 to 255;
 	signal IR: std_logic_vector(15 downto 0);
 	signal opcode: std_logic_vector (3 downto 0);
 	signal RA: std_logic_vector(3 downto 0);
@@ -30,7 +30,7 @@ architecture arch of microprocessor is
 	signal terminate: std_logic;
 	signal cycle_count: integer range 0 to 4 := 0;
 
-	signal deb_count: integer range 0 to 4;
+	signal deb_count: integer range 0 to 100;
 	signal pulse: std_logic;
 
 	signal slow_clock: std_logic;
@@ -45,11 +45,11 @@ architecture arch of microprocessor is
 	signal seg4: std_logic_vector(7 downto 0);
 	signal displaycounter: integer range 0 to 3;
 
-	signal PC_vector: std_logic_vector(15 downto 0);
+	signal display_vector: std_logic_vector(15 downto 0);
 
 	begin
 
-		PC_vector <= std_logic_vector(to_unsigned(PC, 16));
+		display_vector <= std_logic_vector(to_unsigned(PC, 16));
 
 		fetch: process(pulse, reset)
 		begin
@@ -150,46 +150,48 @@ architecture arch of microprocessor is
 		
 --"slow clock" process: Takes the FPGA built in clock and slows it down to a speed of
 --2.5kHz to be used in the FSM and the debounce.	
-	slow_clock_process: process(clock)
-	begin
-		if (rising_edge(clock)) then
-			slow_count <= slow_count + 1;
-			if (slow_count = 20000) then
-				slow_count <= 0;
-				slow_clock <= '0';
-			elsif (slow_count = 19999) then
-				slow_clock <= '1';
+		slow_clock_process: process(clock)
+		begin
+			if (rising_edge(clock)) then
+				slow_count <= slow_count + 1;
+				if (slow_count = 20000) then
+					slow_count <= 0;
+					slow_clock <= '0';
+				elsif (slow_count = 10000) then
+					slow_clock <= '1';
+				end if;
 			end if;
-		end if;
-	end process slow_clock_process;
+		end process slow_clock_process;
 
 --"debounce" process: Takes the input of the slower clock and ensures that only one 
 --clock is running at a time when the button is pushed. This debounced clock is then
 --sent to the FSM as the actual clock for sequential logic. Taken directly from the
 --provided debounce.vhd file on blackboard, modified to allow an LED light to flash for
 --0.5s while the clock turns on.
-		debounce: process(clock)
+		debounce: process(slow_clock)
 	  	begin
 	    	if button = '1' then
 	      		deb_count <= 0;
-	    	elsif (rising_edge(clock)) then
-	      		if (deb_count /= 3) then 
+	    	elsif (rising_edge(slow_clock)) then
+	      		if (deb_count /= 41) then 
 	      			deb_count <= deb_count + 1;
 	      		end if;
 	    	end if;
-	    	if (deb_count = 2) and (button = '0') then 
-	    		pulse <= clock;  
+	    	if (deb_count = 40) and (button = '0') then 
+	    		pulse <= '1';  
 	    		else pulse <= '0';
 			end if;
 	  	end process debounce;
+		
+		-- write display mux here
 
-	char_process: process(PC_vector)
+	char_process: process(display_vector)
 	begin
-		char1 <= PC_vector(15 downto 12);
-		char2 <= PC_vector(11 downto 8);
-		char3 <= PC_vector(7 downto 4);
-		char4 <= PC_vector(3 downto 0);
-	end process char_process; -- mux
+		char1 <= display_vector(15 downto 12);
+		char2 <= display_vector(11 downto 8);
+		char3 <= display_vector(7 downto 4);
+		char4 <= display_vector(3 downto 0);
+	end process char_process;
 
 	--Determines the actual 8-bit vector that gets sent to the cathode to be displayed on 
 	--the 7-segment display.
