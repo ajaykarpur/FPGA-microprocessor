@@ -6,7 +6,9 @@ library IEEE;
 entity microprocessor is
 	port
 	(
-		clock, reset, button: in std_logic;
+		clock, reset, PC_button, mux_button: in std_logic;
+		PC_LED: out std_logic;
+		mux_LED: out std_logic_vector(0 to 3);
 		anode: out std_logic_vector(3 downto 0);
 		Y: out std_logic_vector(7 downto 0)
 	);
@@ -30,8 +32,11 @@ architecture arch of microprocessor is
 	signal terminate: std_logic;
 	signal cycle_count: integer range 0 to 4 := 0;
 
-	signal deb_count: integer range 0 to 100;
-	signal pulse: std_logic;
+	signal PC_deb_count: integer range 0 to 100;
+	signal mux_deb_count: integer range 0 to 100;
+	signal PC_pulse: std_logic;
+	signal mux_pulse: std_logic;
+	signal mux_count: integer range 0 to 3 := 0;
 
 	signal slow_clock: std_logic;
 	signal slow_count: integer range 0 to 20001 := 0;
@@ -49,9 +54,7 @@ architecture arch of microprocessor is
 
 	begin
 
-		display_vector <= std_logic_vector(to_unsigned(PC, 16));
-
-		fetch: process(pulse, reset)
+		fetch: process(PC_pulse, reset)
 		begin
 			if (reset = '1') then
 				IM(0) <= x"1000";
@@ -73,12 +76,12 @@ architecture arch of microprocessor is
 				IM(16) <= x"48A6";
 				IM(17) <= x"3547";
 				IM(18 to 255) <= (others => x"0000");
-			elsif rising_edge(pulse) then
+			elsif rising_edge(PC_pulse) then
 				IR <= IM(PC);
 			end if;
 		end process fetch;
 
-		decode: process(pulse, reset)
+		decode: process(PC_pulse, reset)
 		begin
 			if (reset = '1') then
 				opcode <= "0000";
@@ -86,7 +89,7 @@ architecture arch of microprocessor is
 				RB <= "0000";
 				RD <= "0000";
 				immediate <= x"00";
-			elsif rising_edge(pulse) then
+			elsif rising_edge(PC_pulse) then
 				opcode <= IR(15 downto 12);
 				RA <= IR(11 downto 8);
 				RB <= IR(7 downto 4);
@@ -95,11 +98,11 @@ architecture arch of microprocessor is
 			end if;
 		end process decode;
 
-		execute: process(pulse, reset)
+		execute: process(PC_pulse, reset)
 		begin
 			if (reset = '1') then
 				W <= x"00";
-			elsif rising_edge(pulse) then
+			elsif rising_edge(PC_pulse) then
 				case(opcode) is
 				
 					when "0000" => -- HALT
@@ -130,26 +133,26 @@ architecture arch of microprocessor is
 			end if;
 		end process execute;
 
-		store: process(pulse, reset)
+		store: process(PC_pulse, reset)
 		begin
 			if (reset = '1') then
 				RF(0 to 15) <= (others => x"00");
-			elsif rising_edge(pulse) then
+			elsif rising_edge(PC_pulse) then
 				RF(conv_integer(RD)) <= W;
 			end if;
 		end process store;
 		
-		PC_counter: process(pulse)
+		PC_counter: process(PC_pulse)
 	  	begin
 	  		if (reset = '1') then
 	  			PC <= 0;
-	    	elsif (rising_edge(pulse)) then
+	    	elsif rising_edge(PC_pulse) then
 		    		PC <= PC + 1;
 			end if;
 	  	end process PC_counter;
 		
---"slow clock" process: Takes the FPGA built in clock and slows it down to a speed of
---2.5kHz to be used in the FSM and the debounce.	
+		--"slow clock" process: Takes the FPGA built in clock and slows it down to a speed of
+		--2.5kHz to be used in the FSM and the debounce.	
 		slow_clock_process: process(clock)
 		begin
 			if (rising_edge(clock)) then
@@ -163,145 +166,187 @@ architecture arch of microprocessor is
 			end if;
 		end process slow_clock_process;
 
---"debounce" process: Takes the input of the slower clock and ensures that only one 
---clock is running at a time when the button is pushed. This debounced clock is then
---sent to the FSM as the actual clock for sequential logic. Taken directly from the
---provided debounce.vhd file on blackboard, modified to allow an LED light to flash for
---0.5s while the clock turns on.
-		debounce: process(slow_clock)
+		--"debounce" process: Takes the input of the slower clock and ensures that only one 
+		--clock is running at a time when the PC_button is pushed. This debounced clock is then
+		--sent to the FSM as the actual clock for sequential logic. Taken directly from the
+		--provided debounce.vhd file on blackboard, modified to allow an LED light to flash for
+		--0.5s while the clock turns on.
+		PC_debounce: process(slow_clock)
 	  	begin
-	    	if button = '1' then
-	      		deb_count <= 0;
+	    	if PC_button = '1' then
+	      		PC_deb_count <= 0;
 	    	elsif (rising_edge(slow_clock)) then
-	      		if (deb_count /= 41) then 
-	      			deb_count <= deb_count + 1;
+	      		if (PC_deb_count /= 41) then 
+	      			PC_deb_count <= PC_deb_count + 1;
 	      		end if;
 	    	end if;
-	    	if (deb_count = 40) and (button = '0') then 
-	    		pulse <= '1';  
-	    		else pulse <= '0';
+	    	if (PC_deb_count = 40) and (PC_button = '0') then 
+	    		PC_pulse <= '1';  
+	    		else PC_pulse <= '0';
 			end if;
-	  	end process debounce;
+	  	end process PC_debounce;
 		
-		-- write display mux here
-
-	char_process: process(display_vector)
-	begin
-		char1 <= display_vector(15 downto 12);
-		char2 <= display_vector(11 downto 8);
-		char3 <= display_vector(7 downto 4);
-		char4 <= display_vector(3 downto 0);
-	end process char_process;
-
-	--Determines the actual 8-bit vector that gets sent to the cathode to be displayed on 
-	--the 7-segment display.
-	with char1 select
-		seg1 <= "00000011" when x"0",
-			    "10011111" when x"1",
-			    "00100101" when x"2",
-			    "00001101" when x"3",
-			    "10011001" when x"4",
-			    "01001001" when x"5",
-			    "01000001" when x"6",
-			    "00011111" when x"7",
-			    "00000001" when x"8",
-			    "00001001" when x"9",
-				"00010001" when x"A",
-			    "00000001" when x"B",
-			    "01100011" when x"C",
-			    "10000101" when x"D",
-			    "01100001" when x"E",
-			    "01110001" when x"F",
-			    "11111111" when others;
-
-	with char2 select
-		seg2 <= "00000011" when x"0",
-			    "10011111" when x"1",
-			    "00100101" when x"2",
-			    "00001101" when x"3",
-			    "10011001" when x"4",
-			    "01001001" when x"5",
-			    "01000001" when x"6",
-			    "00011111" when x"7",
-			    "00000001" when x"8",
-			    "00001001" when x"9",
-				"00010001" when x"A",
-			    "00000001" when x"B",
-			    "01100011" when x"C",
-			    "10000101" when x"D",
-			    "01100001" when x"E",
-			    "01110001" when x"F",
-			    "11111111" when others;
-
-	with char3 select
-		seg3 <= "00000011" when x"0",
-			    "10011111" when x"1",
-			    "00100101" when x"2",
-			    "00001101" when x"3",
-			    "10011001" when x"4",
-			    "01001001" when x"5",
-			    "01000001" when x"6",
-			    "00011111" when x"7",
-			    "00000001" when x"8",
-			    "00001001" when x"9",
-				"00010001" when x"A",
-			    "00000001" when x"B",
-			    "01100011" when x"C",
-			    "10000101" when x"D",
-			    "01100001" when x"E",
-			    "01110001" when x"F",
-			    "11111111" when others;
-
-	with char4 select
-		seg4 <= "00000011" when x"0",
-			    "10011111" when x"1",
-			    "00100101" when x"2",
-			    "00001101" when x"3",
-			    "10011001" when x"4",
-			    "01001001" when x"5",
-			    "01000001" when x"6",
-			    "00011111" when x"7",
-			    "00000001" when x"8",
-			    "00001001" when x"9",
-				"00010001" when x"A",
-			    "00000001" when x"B",
-			    "01100011" when x"C",
-			    "10000101" when x"D",
-			    "01100001" when x"E",
-			    "01110001" when x"F",
-			    "11111111" when others;
-
---"displaying" process: establishes a counter that will cycle through each of the anodes
---as to allow each character to be displayed one by one since they cannot all be sent
---to their corresponding anode at the same time
-	displaying: process(seg1, seg2, seg3, seg4)
-	begin
-		if (rising_edge(slow_clock)) then
-			if (displaycounter = 3) then
-			displaycounter <= 0;
-			else
-			displaycounter <= displaycounter + 1;
+		display_mux: process(mux_button)
+		begin
+			if rising_edge(mux_pulse) then
+				mux_count <= mux_count + 1;
+				if (mux_count = 4) then
+					mux_count <= 0;
+				end if;
 			end if;
-		end if;
-		case(displaycounter) is
-		
-			when 0 	=> 	
-				Y 		<= seg1;
-				anode 	<= "0111";
-			when 1 	=>	
-				Y 		<= seg2;
-				anode 	<= "1011";
-			when 2 	=> 	
-				Y 		<= seg3;
-				anode 	<= "1101";
-			when 3 	=> 	
-				Y 		<= seg4;
-				anode 	<= "1110";
-			when others =>	
-				Y 		<= "11111111";
-				anode 	<= "1111";
-		end case;
-		
-	end process displaying;
+		end process display_mux;
+
+		with mux_count select
+			display_vector <= std_logic_vector(to_unsigned(PC, 16)) when 0,
+							  (x"000" & opcode) when 1,
+							  IR when 2,
+							  (x"00" & RF(conv_integer(RD))) when 3,
+							  std_logic_vector(to_unsigned(PC, 16)) when others;
+
+		mux_debounce: process(slow_clock)
+	  	begin
+	    	if mux_button = '1' then
+	      		mux_deb_count <= 0;
+	    	elsif (rising_edge(slow_clock)) then
+	      		if (mux_deb_count /= 41) then 
+	      			mux_deb_count <= mux_deb_count + 1;
+	      		end if;
+	    	end if;
+	    	if (mux_deb_count = 40) and (mux_button = '0') then 
+	    		mux_pulse <= '1';  
+	    		else mux_pulse <= '0';
+			end if;
+	  	end process mux_debounce;
+
+		char_process: process(display_vector)
+		begin
+			char1 <= display_vector(15 downto 12);
+			char2 <= display_vector(11 downto 8);
+			char3 <= display_vector(7 downto 4);
+			char4 <= display_vector(3 downto 0);
+		end process char_process;
+
+		--Determines the actual 8-bit vector that gets sent to the cathode to be displayed on 
+		--the 7-segment display.
+		with char1 select
+			seg1 <= "00000011" when x"0",
+				    "10011111" when x"1",
+				    "00100101" when x"2",
+				    "00001101" when x"3",
+				    "10011001" when x"4",
+				    "01001001" when x"5",
+				    "01000001" when x"6",
+				    "00011111" when x"7",
+				    "00000001" when x"8",
+				    "00001001" when x"9",
+					"00010001" when x"A",
+				    "00000001" when x"B",
+				    "01100011" when x"C",
+				    "10000101" when x"D",
+				    "01100001" when x"E",
+				    "01110001" when x"F",
+				    "11111111" when others;
+
+		with char2 select
+			seg2 <= "00000011" when x"0",
+				    "10011111" when x"1",
+				    "00100101" when x"2",
+				    "00001101" when x"3",
+				    "10011001" when x"4",
+				    "01001001" when x"5",
+				    "01000001" when x"6",
+				    "00011111" when x"7",
+				    "00000001" when x"8",
+				    "00001001" when x"9",
+					"00010001" when x"A",
+				    "00000001" when x"B",
+				    "01100011" when x"C",
+				    "10000101" when x"D",
+				    "01100001" when x"E",
+				    "01110001" when x"F",
+				    "11111111" when others;
+
+		with char3 select
+			seg3 <= "00000011" when x"0",
+				    "10011111" when x"1",
+				    "00100101" when x"2",
+				    "00001101" when x"3",
+				    "10011001" when x"4",
+				    "01001001" when x"5",
+				    "01000001" when x"6",
+				    "00011111" when x"7",
+				    "00000001" when x"8",
+				    "00001001" when x"9",
+					"00010001" when x"A",
+				    "00000001" when x"B",
+				    "01100011" when x"C",
+				    "10000101" when x"D",
+				    "01100001" when x"E",
+				    "01110001" when x"F",
+				    "11111111" when others;
+
+		with char4 select
+			seg4 <= "00000011" when x"0",
+				    "10011111" when x"1",
+				    "00100101" when x"2",
+				    "00001101" when x"3",
+				    "10011001" when x"4",
+				    "01001001" when x"5",
+				    "01000001" when x"6",
+				    "00011111" when x"7",
+				    "00000001" when x"8",
+				    "00001001" when x"9",
+					"00010001" when x"A",
+				    "00000001" when x"B",
+				    "01100011" when x"C",
+				    "10000101" when x"D",
+				    "01100001" when x"E",
+				    "01110001" when x"F",
+				    "11111111" when others;
+
+	--"displaying" process: establishes a counter that will cycle through each of the anodes
+	--as to allow each character to be displayed one by one since they cannot all be sent
+	--to their corresponding anode at the same time
+		displaying: process(seg1, seg2, seg3, seg4)
+		begin
+			if (rising_edge(slow_clock)) then
+				if (displaycounter = 3) then
+				displaycounter <= 0;
+				else
+				displaycounter <= displaycounter + 1;
+				end if;
+			end if;
+			case(displaycounter) is
+				when 0 =>
+					Y <= seg1;
+					anode <= "0111";
+				
+				when 1 =>	
+					Y <= seg2;
+					anode <= "1011";
+				
+				when 2 => 	
+					Y <= seg3;
+					anode <= "1101";
+				
+				when 3 => 	
+					Y <= seg4;
+					anode <= "1110";
+				
+				when others =>	
+					Y <= "11111111";
+					anode <= "1111";
+			end case;
+			
+		end process displaying;
+
+		PC_LED <= PC_pulse;
+
+		with mux_count select
+			mux_LED <= "1000" when 0,
+					   "0100" when 1,
+					   "0010" when 2,
+					   "0001" when 3,
+					   "0000" when others;
 
 end architecture arch;

@@ -1,14 +1,24 @@
-# ===== CLOCK=====
+# ===== CLOCK =====
 
 NET "clock" LOC = "T9";
 
-# switches
+# ===== SWITCHES =====
 
 NET "reset" LOC = "F12";
 
 # ===== PUSH BUTTONS =====
 
-NET "button" LOC = "M13";		// goes to BTN0
+NET "PC_button" LOC = "M13";	// BTN0
+NET "mux_button" LOC = "M11";	// BTN1
+
+# ===== LEDs =====
+
+NET "mux_LED(0)" LOC = "P11";	// LD7
+NET "mux_LED(1)" LOC = "P12";	// LD6
+NET "mux_LED(2)" LOC = "N12";	// LD5
+NET "mux_LED(3)" LOC = "P13";	// LD4
+
+NET "PC_LED" LOC = "K12";		// LD0
 
 # ===== 7 SEG DISPLAY =====
 
