@@ -21,6 +21,8 @@ architecture arch of microprocessor is
 
 	signal IM: IM_array;
 	signal PC: integer range 0 to 255;
+	signal PC_temp: integer range 0 to 255;
+	signal PC_return: std_logic;
 	signal IR: std_logic_vector(15 downto 0);
 	signal opcode: std_logic_vector (3 downto 0);
 	signal RA: std_logic_vector(3 downto 0);
@@ -149,13 +151,22 @@ architecture arch of microprocessor is
 	  		if (reset = '1') then
 	  			PC <= 0;
 	    	elsif rising_edge(PC_pulse) then
-		    		PC <= PC + 1;
+				if (opcode = "1001") then
+					PC_temp <= PC;
+					PC <= conv_integer(immediate);
+					PC_return <= '1';
+				elsif (PC_return = '1') then
+					PC <= PC_temp + 1;
+					PC_return <= '0';
+				else
+					PC <= PC + 1;
+				end if;
 			end if;
 	  	end process PC_counter;
 		
 		
 		
-		-- clock and PC ================================================
+		-- clock and PC ===================================================
 		
 		--"slow clock" process: Takes the FPGA built in clock and slows it down to a speed of
 		--2.5kHz to be used in the FSM and the debounce.	
