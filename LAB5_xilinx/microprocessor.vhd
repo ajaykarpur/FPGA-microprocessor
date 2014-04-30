@@ -54,6 +54,8 @@ architecture arch of microprocessor is
 
 	begin
 
+		-- microprocessor stages ===========================================
+
 		fetch: process(PC_pulse, reset)
 		begin
 			if (reset = '1') then
@@ -151,6 +153,10 @@ architecture arch of microprocessor is
 			end if;
 	  	end process PC_counter;
 		
+		
+		
+		-- clock and PC ================================================
+		
 		--"slow clock" process: Takes the FPGA built in clock and slows it down to a speed of
 		--2.5kHz to be used in the FSM and the debounce.	
 		slow_clock_process: process(clock)
@@ -186,6 +192,12 @@ architecture arch of microprocessor is
 			end if;
 	  	end process PC_debounce;
 		
+		PC_LED <= PC_pulse;
+		
+		
+		
+		-- display mux =====================================================
+		
 		display_mux: process(mux_pulse)
 		begin
 			if rising_edge(mux_pulse) then
@@ -217,6 +229,17 @@ architecture arch of microprocessor is
 	    		else mux_pulse <= '0';
 			end if;
 	  	end process mux_debounce;
+		
+		with mux_count select
+			mux_LED <= "1000" when 0,
+					   "0100" when 1,
+					   "0010" when 2,
+					   "0001" when 3,
+					   "0000" when others;
+		
+		
+		
+		-- display driver ==================================================
 
 		char_process: process(display_vector)
 		begin
@@ -304,9 +327,9 @@ architecture arch of microprocessor is
 				     "01110001" when x"F",
 				     "11111111" when others;
 
-	--"displaying" process: establishes a counter that will cycle through each of the anodes
-	--as to allow each character to be displayed one by one since they cannot all be sent
-	--to their corresponding anode at the same time
+		--"displaying" process: establishes a counter that will cycle through each of the anodes
+		--as to allow each character to be displayed one by one since they cannot all be sent
+		--to their corresponding anode at the same time
 		displaying: process(seg1, seg2, seg3, seg4)
 		begin
 			if (rising_edge(slow_clock)) then
@@ -339,14 +362,5 @@ architecture arch of microprocessor is
 			end case;
 			
 		end process displaying;
-
-		PC_LED <= PC_pulse;
-
-		with mux_count select
-			mux_LED <= "1000" when 0,
-					   "0100" when 1,
-					   "0010" when 2,
-					   "0001" when 3,
-					   "0000" when others;
 
 end architecture arch;
