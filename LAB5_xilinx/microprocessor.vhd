@@ -20,7 +20,7 @@ architecture arch of microprocessor is
 	type RF_array is array(0 to 15) of std_logic_vector(7 downto 0);
 
 	signal IM: IM_array;
-	signal PC: integer range 0 to 255;
+	signal PC: integer range 0 to 255 := 0;
 	signal PC_temp: integer range 0 to 255;
 	signal PC_return: std_logic;
 	signal IR: std_logic_vector(15 downto 0);
@@ -58,7 +58,7 @@ architecture arch of microprocessor is
 
 		-- microprocessor stages ===========================================
 
-		fetch: process(PC_pulse, reset)
+		fetch: process(clock, reset)
 		begin
 			if (reset = '1') then
 				IM(0) <= x"1000";
@@ -80,12 +80,12 @@ architecture arch of microprocessor is
 				IM(16) <= x"48A6";
 				IM(17) <= x"3547";
 				IM(18 to 255) <= (others => x"0000");
-			elsif rising_edge(PC_pulse) then
+			elsif rising_edge(clock) then
 				IR <= IM(PC);
 			end if;
 		end process fetch;
 
-		decode: process(PC_pulse, reset)
+		decode: process(clock, reset)
 		begin
 			if (reset = '1') then
 				opcode <= "0000";
@@ -93,7 +93,7 @@ architecture arch of microprocessor is
 				RB <= "0000";
 				RD <= "0000";
 				immediate <= x"00";
-			elsif rising_edge(PC_pulse) then
+			elsif rising_edge(clock) then
 				opcode <= IR(15 downto 12);
 				RA <= IR(11 downto 8);
 				RB <= IR(7 downto 4);
@@ -102,11 +102,11 @@ architecture arch of microprocessor is
 			end if;
 		end process decode;
 
-		execute: process(PC_pulse, reset)
+		execute: process(clock, reset)
 		begin
 			if (reset = '1') then
 				W <= x"00";
-			elsif rising_edge(PC_pulse) then
+			elsif rising_edge(clock) then
 				case(opcode) is
 				
 					when "0000" => -- HALT
@@ -137,11 +137,11 @@ architecture arch of microprocessor is
 			end if;
 		end process execute;
 
-		store: process(PC_pulse, reset)
+		store: process(clock, reset)
 		begin
 			if (reset = '1') then
 				RF(0 to 15) <= (others => x"00");
-			elsif rising_edge(PC_pulse) then
+			elsif rising_edge(clock) then
 				RF(conv_integer(RD)) <= W;
 			end if;
 		end process store;
