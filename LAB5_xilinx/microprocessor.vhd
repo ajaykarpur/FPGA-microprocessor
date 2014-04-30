@@ -186,11 +186,11 @@ architecture arch of microprocessor is
 			end if;
 	  	end process PC_debounce;
 		
-		display_mux: process(mux_button)
+		display_mux: process(mux_pulse)
 		begin
 			if rising_edge(mux_pulse) then
 				mux_count <= mux_count + 1;
-				if (mux_count = 4) then
+				if (mux_count = 3) then
 					mux_count <= 0;
 				end if;
 			end if;
@@ -230,79 +230,79 @@ architecture arch of microprocessor is
 		--the 7-segment display.
 		with char1 select
 			seg1 <= "00000011" when x"0",
-				    "10011111" when x"1",
-				    "00100101" when x"2",
-				    "00001101" when x"3",
-				    "10011001" when x"4",
-				    "01001001" when x"5",
-				    "01000001" when x"6",
-				    "00011111" when x"7",
-				    "00000001" when x"8",
-				    "00001001" when x"9",
-					"00010001" when x"A",
-				    "00000001" when x"B",
-				    "01100011" when x"C",
-				    "10000101" when x"D",
-				    "01100001" when x"E",
-				    "01110001" when x"F",
-				    "11111111" when others;
+				     "10011111" when x"1",
+				     "00100101" when x"2",
+				     "00001101" when x"3",
+				     "10011001" when x"4",
+				     "01001001" when x"5",
+				     "01000001" when x"6",
+				     "00011111" when x"7",
+				     "00000001" when x"8",
+				     "00001001" when x"9",
+					  "00010001" when x"A",
+				     "11000001" when x"b",
+				     "01100011" when x"C",
+				     "10000101" when x"d",
+				     "01100001" when x"E",
+				     "01110001" when x"F",
+				     "11111111" when others;
 
 		with char2 select
 			seg2 <= "00000011" when x"0",
-				    "10011111" when x"1",
-				    "00100101" when x"2",
-				    "00001101" when x"3",
-				    "10011001" when x"4",
-				    "01001001" when x"5",
-				    "01000001" when x"6",
-				    "00011111" when x"7",
-				    "00000001" when x"8",
-				    "00001001" when x"9",
-					"00010001" when x"A",
-				    "00000001" when x"B",
-				    "01100011" when x"C",
-				    "10000101" when x"D",
-				    "01100001" when x"E",
-				    "01110001" when x"F",
-				    "11111111" when others;
+				     "10011111" when x"1",
+				     "00100101" when x"2",
+				     "00001101" when x"3",
+				     "10011001" when x"4",
+				     "01001001" when x"5",
+				     "01000001" when x"6",
+				     "00011111" when x"7",
+				     "00000001" when x"8",
+				     "00001001" when x"9",
+					  "00010001" when x"A",
+				     "11000001" when x"b",
+				     "01100011" when x"C",
+				     "10000101" when x"d",
+				     "01100001" when x"E",
+				     "01110001" when x"F",
+				     "11111111" when others;
 
 		with char3 select
 			seg3 <= "00000011" when x"0",
-				    "10011111" when x"1",
-				    "00100101" when x"2",
-				    "00001101" when x"3",
-				    "10011001" when x"4",
-				    "01001001" when x"5",
-				    "01000001" when x"6",
-				    "00011111" when x"7",
-				    "00000001" when x"8",
-				    "00001001" when x"9",
-					"00010001" when x"A",
-				    "00000001" when x"B",
-				    "01100011" when x"C",
-				    "10000101" when x"D",
-				    "01100001" when x"E",
-				    "01110001" when x"F",
-				    "11111111" when others;
+				     "10011111" when x"1",
+				     "00100101" when x"2",
+				     "00001101" when x"3",
+				     "10011001" when x"4",
+				     "01001001" when x"5",
+				     "01000001" when x"6",
+				     "00011111" when x"7",
+				     "00000001" when x"8",
+				     "00001001" when x"9",
+					  "00010001" when x"A",
+				     "11000001" when x"b",
+				     "01100011" when x"C",
+				     "10000101" when x"d",
+				     "01100001" when x"E",
+				     "01110001" when x"F",
+				     "11111111" when others;
 
 		with char4 select
 			seg4 <= "00000011" when x"0",
-				    "10011111" when x"1",
-				    "00100101" when x"2",
-				    "00001101" when x"3",
-				    "10011001" when x"4",
-				    "01001001" when x"5",
-				    "01000001" when x"6",
-				    "00011111" when x"7",
-				    "00000001" when x"8",
-				    "00001001" when x"9",
-					"00010001" when x"A",
-				    "00000001" when x"B",
-				    "01100011" when x"C",
-				    "10000101" when x"D",
-				    "01100001" when x"E",
-				    "01110001" when x"F",
-				    "11111111" when others;
+				     "10011111" when x"1",
+				     "00100101" when x"2",
+				     "00001101" when x"3",
+				     "10011001" when x"4",
+				     "01001001" when x"5",
+				     "01000001" when x"6",
+				     "00011111" when x"7",
+				     "00000001" when x"8",
+				     "00001001" when x"9",
+					  "00010001" when x"A",
+				     "11000001" when x"b",
+				     "01100011" when x"C",
+				     "10000101" when x"d",
+				     "01100001" when x"E",
+				     "01110001" when x"F",
+				     "11111111" when others;
 
 	--"displaying" process: establishes a counter that will cycle through each of the anodes
 	--as to allow each character to be displayed one by one since they cannot all be sent
