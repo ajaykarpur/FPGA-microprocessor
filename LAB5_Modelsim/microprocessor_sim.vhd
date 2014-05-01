@@ -84,6 +84,7 @@ architecture arch of microprocessor is
 				
 					when "0000" => -- HALT
 						terminate <= '1';
+						W <= x"00";
 
 					when "0001" => -- LDI
 						W <= immediate;
@@ -133,6 +134,8 @@ architecture arch of microprocessor is
 	  		if (reset = '1') then
 	  			PC <= 0;
 	  			cycle_count <= 0;
+	  		elsif (terminate = '1') then
+	  			PC <= PC;
 	    	elsif (rising_edge(clock)) then
 	      		if (cycle_count /= 4) then 
 	      			cycle_count <= cycle_count + 1;

@@ -111,6 +111,7 @@ architecture arch of microprocessor is
 				
 					when "0000" => -- HALT
 						terminate <= '1';
+						W <= x"00"
 
 					when "0001" => -- LDI
 						W <= immediate;
