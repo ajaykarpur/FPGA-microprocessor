@@ -71,7 +71,7 @@ architecture arch of microprocessor is
 				IM(8) <= x"4475";
 				IM(9) <= x"1948";
 				IM(10) <= x"15B9";
-				IM(11) <= x"3899";
+				IM(11) <= x"3894";
 				IM(12) <= x"135A";
 				IM(13) <= x"161B";
 				IM(14) <= x"2895";
