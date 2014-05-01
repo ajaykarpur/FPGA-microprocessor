@@ -13,6 +13,8 @@ architecture arch of microprocessor is
 
 	signal IM: IM_array;
 	signal PC: integer range 0 to 255 := 0;
+	signal PC_temp: integer range 0 to 255;
+	signal PC_return: std_logic;
 	signal IR: std_logic_vector(15 downto 0);
 	signal opcode: std_logic_vector (3 downto 0);
 	signal RA: std_logic_vector(3 downto 0);
@@ -135,7 +137,16 @@ architecture arch of microprocessor is
 	      		if (cycle_count /= 4) then 
 	      			cycle_count <= cycle_count + 1;
 	      		else
-		    		PC <= PC + 1;
+			    	if (opcode = "1001") then
+						PC_temp <= PC;
+						PC <= conv_integer(immediate);
+						PC_return <= '1';
+					elsif (PC_return = '1') then
+						PC <= PC_temp + 1;
+						PC_return <= '0';
+					else
+						PC <= PC + 1;
+					end if;
 		    		cycle_count <= 1;
 		    	end if;
 			end if;

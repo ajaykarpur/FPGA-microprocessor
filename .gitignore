@@ -220,3 +220,5 @@ modelsim.ini
 wlft*
 transcript
 work/
+*.doc
+*.docx

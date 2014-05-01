@@ -32,7 +32,6 @@ architecture arch of microprocessor is
 	signal immediate: std_logic_vector(7 downto 0);
 	signal W: std_logic_vector(7 downto 0);
 	signal terminate: std_logic;
-	signal cycle_count: integer range 0 to 4 := 0;
 
 	signal PC_deb_count: integer range 0 to 100;
 	signal mux_deb_count: integer range 0 to 100;
@@ -58,7 +57,7 @@ architecture arch of microprocessor is
 
 		-- microprocessor stages ===========================================
 
-		fetch: process(clock, reset)
+		fetch: process(slow_clock, reset)
 		begin
 			if (reset = '1') then
 				IM(0) <= x"1000";
@@ -80,20 +79,20 @@ architecture arch of microprocessor is
 				IM(16) <= x"48A6";
 				IM(17) <= x"3547";
 				IM(18 to 255) <= (others => x"0000");
-			elsif rising_edge(clock) then
+			elsif rising_edge(slow_clock) then
 				IR <= IM(PC);
 			end if;
 		end process fetch;
 
-		decode: process(clock, reset)
+		decode: process(slow_clock, reset)
 		begin
 			if (reset = '1') then
-				opcode <= "0000";
+				opcode <= "1111";
 				RA <= "0000";
 				RB <= "0000";
 				RD <= "0000";
 				immediate <= x"00";
-			elsif rising_edge(clock) then
+			elsif rising_edge(slow_clock) then
 				opcode <= IR(15 downto 12);
 				RA <= IR(11 downto 8);
 				RB <= IR(7 downto 4);
@@ -102,11 +101,12 @@ architecture arch of microprocessor is
 			end if;
 		end process decode;
 
-		execute: process(clock, reset)
+		execute: process(slow_clock, reset)
 		begin
 			if (reset = '1') then
 				W <= x"00";
-			elsif rising_edge(clock) then
+				terminate <= '0';
+			elsif rising_edge(slow_clock) then
 				case(opcode) is
 				
 					when "0000" => -- HALT
@@ -137,11 +137,11 @@ architecture arch of microprocessor is
 			end if;
 		end process execute;
 
-		store: process(clock, reset)
+		store: process(slow_clock, reset)
 		begin
 			if (reset = '1') then
 				RF(0 to 15) <= (others => x"00");
-			elsif rising_edge(clock) then
+			elsif rising_edge(slow_clock) then
 				RF(conv_integer(RD)) <= W;
 			end if;
 		end process store;
@@ -150,6 +150,8 @@ architecture arch of microprocessor is
 	  	begin
 	  		if (reset = '1') then
 	  			PC <= 0;
+	  		elsif (terminate = '1') then
+	  			PC <= PC;
 	    	elsif rising_edge(PC_pulse) then
 				if (opcode = "1001") then
 					PC_temp <= PC;
