@@ -31,12 +31,12 @@ The processor has 5 basic instructions as follows:
 | 1001 | JMP |
 | 0000 | HALT |
 
-LDI: Loads the 8-bit data (RA & RB) into the destination register address
-ADD: Adds the RF data in RA and RB locations and stores it in RD
-SUB: Subtracts the RF data in RB from RA locations and stores it in RD
-OR: performs a logical OR on the RF data in RA and RB and stores it in RD
-XOR: performs a logical XOR on the RF data in RA and RB and stores it in RD
-JMP: Jumps to the given address location (RA & RB) for the next instruction, executes it, and returns to the next PC location
+- LDI: Loads the 8-bit data (RA & RB) into the destination register address
+- ADD: Adds the RF data in RA and RB locations and stores it in RD
+- SUB: Subtracts the RF data in RB from RA locations and stores it in RD
+- OR: performs a logical OR on the RF data in RA and RB and stores it in RD
+- XOR: performs a logical XOR on the RF data in RA and RB and stores it in RD
+- JMP: Jumps to the given address location (RA & RB) for the next instruction, executes it, and returns to the next PC location
 
 Architecture
 -------------------
