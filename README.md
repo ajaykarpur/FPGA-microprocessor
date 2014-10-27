@@ -13,12 +13,6 @@ The machine executes an instruction in 4 clock cycles (FETCH, DECODE, EXECUTE an
 - The third cycle (EXECUTE) carries out the instruction using the ALU for the specific opcode and stores the result in the W register.
 - The fourth cycle (STORE) writes the result of the EXECUTE cycle to the data memory register file (RF).
 
-The PC stores the address for the next instruction to be executed.
-
-The IM is 16 bits wide, with 256 locations. The PC register is 8 bits wide.
-
-The data memory register file (RF) has 16 locations and is 8 bits wide.
-
 The processor has 5 basic instructions as follows:
 
 | Opcode | Task to be executed |
@@ -41,4 +35,4 @@ The processor has 5 basic instructions as follows:
 Architecture
 -------------------
 
-![alt tag](https://raw.github.com/ajaykarpur/FPGA-microprocessor/master/architecture.jpg)
+![architecture diagram](https://raw.github.com/ajaykarpur/FPGA-microprocessor/master/architecture.jpg)
